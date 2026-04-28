@@ -7,29 +7,20 @@ pipeline {
     }
 
     stages {
-        stage('Limpieza y Preparacion') {
+        stage('Deploy') {
             steps {
                 script {
-                    sh "docker exec -u root servidor-tarea rm -f ${APACHE_ROOT}/index.html"
+                    sh "cp -r * ${APACHE_ROOT}"
+                    sh "chmod -R 777 ${APACHE_ROOT}"
                 }
             }
         }
 
-        stage('Deploy to Apache') {
+        stage('Docs') {
             steps {
                 script {
-                    // Copia todo desde la raiz del workspace al contenedor
-                    sh "docker exec -u root servidor-tarea sh -c 'cp -r /var/jenkins_home/workspace/${JOB_NAME}/* ${APACHE_ROOT}/'"
-                    sh "docker exec -u root servidor-tarea chmod -R 777 ${APACHE_ROOT}"
-                }
-            }
-        }
-
-        stage('Generate Documentation') {
-            steps {
-                script {
-                    sh "docker exec -u root servidor-tarea mkdir -p ${DOCS_DIR}"
-                    sh "docker exec -u root servidor-tarea phpdoc -d ${APACHE_ROOT} -t ${DOCS_DIR} --ignore=doc/"
+                    sh "mkdir -p ${DOCS_DIR}"
+                    sh "phpdoc -d ${APACHE_ROOT} -t ${DOCS_DIR} --ignore=doc/"
                 }
             }
         }
@@ -37,10 +28,10 @@ pipeline {
 
     post {
         success {
-            echo 'Despliegue finalizado con éxito.'
+            echo 'Deployment successful'
         }
         failure {
-            echo 'Error en el proceso de despliegue.'
+            echo 'Deployment failed'
         }
     }
 }
